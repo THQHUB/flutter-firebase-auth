@@ -1,0 +1,169 @@
+import 'package:firebase_auth/firebase_auth.dart';
+
+class AuthService {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Sign Up
+  Future<User?> signUp(String email, String password) async {
+    try {
+      UserCredential result = await _auth.createUserWithEmailAndPassword(
+        email: email, 
+        password: password
+      );
+      return result.user;
+    } catch (e) {
+      print(e.toString());
+      return null;
+    }
+  }
+
+  // Sign In
+  Future<User?> signIn(String email, String password) async {
+    try {
+      UserCredential result = await _auth.signInWithEmailAndPassword(
+        email: email, 
+        password: password
+      );
+      return result.user;
+    } catch (e) {
+      print(e.toString());
+      return null;
+    }
+  }
+
+  // Sign Out
+  Future<void> signOut() async {
+    await _auth.signOut();
+  }
+}import 'package:flutter/material.dart';
+import 'auth_service.dart';
+import 'signup_screen.dart';
+import 'home_screen.dart';
+
+class LoginScreen extends StatefulWidget {
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final AuthService _auth = AuthService();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Login")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _emailController,
+              decoration: InputDecoration(labelText: "Email"),
+            ),
+            TextField(
+              controller: _passwordController,
+              decoration: InputDecoration(labelText: "Password"),
+              obscureText: true,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () async {
+                var user = await _auth.signIn(
+                  _emailController.text, 
+                  _passwordController.text
+                );
+                if (user != null) {
+                  Navigator.pushReplacement(context, 
+                    MaterialPageRoute(builder: (_) => HomeScreen()));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Login Failed"))
+                  );
+                }
+              },
+              child: Text("Login"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(context, 
+                  MaterialPageRoute(builder: (_) => SignupScreen()));
+              },
+              child: Text("Don't have an account? Sign Up"),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}import 'package:flutter/material.dart';
+import 'auth_service.dart';
+
+class SignupScreen extends StatefulWidget {
+  @override
+  _SignupScreenState createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final AuthService _auth = AuthService();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Sign Up")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _emailController,
+              decoration: InputDecoration(labelText: "Email"),
+            ),
+            TextField(
+              controller: _passwordController,
+              decoration: InputDecoration(labelText: "Password"),
+              obscureText: true,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () async {
+                var user = await _auth.signUp(
+                  _emailController.text, 
+                  _passwordController.text
+                );
+                if (user != null) {
+                  Navigator.pop(context); // Go back to login
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Account Created! Please Login."))
+                  );
+                }
+              },
+              child: Text("Sign Up"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'login_screen.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: LoginScreen(),
+    );
+  }
+}
